@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>GPS Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; display: flex; flex-direction: column; height: 100vh; }
+        #header { padding: 12px 20px; background: #16213e; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #0f3460; }
+        #header h1 { font-size: 1.1rem; color: #00d4ff; }
+        #status { font-size: 0.85rem; }
+        #map { flex: 1; }
+        #footer { padding: 8px 20px; background: #16213e; font-size: 0.82rem; display: flex; gap: 24px; border-top: 1px solid #0f3460; }
+        #footer span { color: #00d4ff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>📍 GPS Tracker en Tiempo Real</h1>
+        <div id="status">Conectando...</div>
+    </div>
+    <div id="map"></div>
+    <div id="footer">
+        <div>Lat: <span id="lat">-</span></div>
+        <div>Lon: <span id="lon">-</span></div>
+        <div>Última actualización: <span id="fecha">-</span></div>
+        <div>IP origen: <span id="ip">-</span></div>
+    </div>
+
+    <script>
+        var map = L.map('map').setView([11.0, -74.8], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>'
+        }).addTo(map);
+
+        var marker = null;
+
+        function actualizar() {
+            fetch('/api/ubicacion.php')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('status').textContent = '⚠️ ' + data.error;
+                        return;
+                    }
+
+                    var lat = parseFloat(data.latitud);
+                    var lon = parseFloat(data.longitud);
+
+                    if (!marker) {
+                        marker = L.marker([lat, lon]).addTo(map);
+                    } else {
+                        marker.setLatLng([lat, lon]);
+                    }
+
+                    map.setView([lat, lon], 17);
+                    marker.bindPopup(
+                        '<b>GPS Tracker</b><br>' +
+                        'Lat: ' + lat + '<br>' +
+                        'Lon: ' + lon + '<br>' +
+                        'Recibido: ' + data.fecha_recepcion
+                    ).openPopup();
+
+                    document.getElementById('lat').textContent = lat;
+                    document.getElementById('lon').textContent = lon;
+                    document.getElementById('fecha').textContent = data.fecha_recepcion;
+                    document.getElementById('ip').textContent = data.ip_origen;
+                    document.getElementById('status').textContent = '🟢 En vivo';
+                })
+                .catch(() => {
+                    document.getElementById('status').textContent = '🔴 Error de conexión';
+                });
+        }
+
+        actualizar();
+        setInterval(actualizar, 5000);
+    </script>
+</body>
+</html>
