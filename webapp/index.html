@@ -9,29 +9,83 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; display: flex; flex-direction: column; height: 100vh; }
-        #header { padding: 12px 20px; background: #16213e; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #0f3460; }
-        #header h1 { font-size: 1.1rem; color: #00d4ff; }
+        #header { padding: 10px 20px; background: #16213e; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #0f3460; flex-wrap: wrap; gap: 8px; }
+        #header h1 { font-size: 1rem; color: #00d4ff; }
+        #header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         #status { font-size: 0.85rem; }
+        .toggle-btn { padding: 5px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: all 0.2s; }
+        .toggle-btn.activo { background: #00d4ff; color: #1a1a2e; }
+        .toggle-btn.inactivo { background: #0f3460; color: #aaa; }
         #map { flex: 1; }
-        #footer { padding: 8px 20px; background: #16213e; font-size: 0.82rem; display: flex; gap: 24px; border-top: 1px solid #0f3460; }
+        #footer { padding: 8px 20px; background: #16213e; font-size: 0.82rem; display: flex; gap: 24px; border-top: 1px solid #0f3460; flex-wrap: wrap; }
         #footer span { color: #00d4ff; font-weight: bold; }
+        #btnCentrar { position: fixed; bottom: 60px; right: 20px; z-index: 1000; background: #00d4ff; color: #1a1a2e; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.4); display: none; }
+
+        /* Panel historial */
+        #panel-historial { display: none; background: #16213e; border-bottom: 1px solid #0f3460; padding: 10px 20px; flex-direction: column; gap: 10px; }
+        #panel-historial.visible { display: flex; }
+        .fechas-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+        .fecha-group { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: #aaa; }
+        .fecha-group input { background: #0f3460; border: 1px solid #00d4ff44; color: #eee; padding: 5px 8px; border-radius: 6px; font-size: 0.8rem; }
+        #btnBuscar { background: #00d4ff; color: #1a1a2e; border: none; padding: 6px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; align-self: flex-end; }
+        #slider-container { display: none; flex-direction: column; gap: 6px; }
+        #slider-container.visible { display: flex; }
+        #slider { width: 100%; accent-color: #00d4ff; cursor: pointer; }
+        #slider-info { font-size: 0.8rem; color: #00d4ff; text-align: center; }
+        #total-puntos { font-size: 0.78rem; color: #aaa; text-align: center; }
     </style>
 </head>
 <body>
     <div id="header">
-        <h1>📍 GPS Tracker en Tiempo Real</h1>
-        <div id="status">Conectando...</div>
+        <h1>📍 GPS Tracker</h1>
+        <div id="header-right">
+            <button id="btnTiempoReal" class="toggle-btn activo" onclick="setVista('realtime')">📡 Tiempo Real</button>
+            <button id="btnHistorial" class="toggle-btn inactivo" onclick="setVista('historial')">🕓 Historial</button>
+            <div id="modo-container" style="display:flex;gap:8px;">
+                <button id="btnAuto" class="toggle-btn activo" onclick="setModo('auto')">🔄 Auto</button>
+                <button id="btnManual" class="toggle-btn inactivo" onclick="setModo('manual')">🖐 Manual</button>
+            </div>
+            <div id="status">Conectando...</div>
+        </div>
     </div>
+
+    <div id="panel-historial">
+        <div class="fechas-row">
+            <div class="fecha-group">
+                <label>Fecha y hora inicio</label>
+                <input type="datetime-local" id="fechaInicio">
+            </div>
+            <div class="fecha-group">
+                <label>Fecha y hora fin</label>
+                <input type="datetime-local" id="fechaFin">
+            </div>
+            <button id="btnBuscar" onclick="buscarRecorrido()">🔍 Buscar</button>
+        </div>
+        <div id="slider-container">
+            <input type="range" id="slider" min="0" value="0">
+            <div id="slider-info">-</div>
+            <div id="total-puntos">-</div>
+        </div>
+    </div>
+
     <div id="map"></div>
+
     <div id="footer">
         <div>Lat: <span id="lat">-</span></div>
         <div>Lon: <span id="lon">-</span></div>
-        <div>Última actualización: <span id="fecha">-</span></div>
+        <div>Fecha: <span id="fecha">-</span></div>
         <div>IP origen: <span id="ip">-</span></div>
     </div>
 
+    <button id="btnCentrar" onclick="if(ultimaPos) map.setView(ultimaPos, 17);">📍 Centrar</button>
+
     <script>
-        var map = L.map('map').setView([11.0, -74.8], 15);
+        var map = L.map('map', {
+            scrollWheelZoom: true,
+            doubleClickZoom: true,
+            touchZoom: true,
+            zoomControl: true
+        }).setView([11.0, -74.8], 15);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -39,6 +93,59 @@
         }).addTo(map);
 
         var marker = null;
+        var ultimaPos = null;
+        var modo = 'auto';
+        var vista = 'realtime';
+        var intervalo = null;
+        var rutaLayer = null;
+        var marcadorHistorial = null;
+        var puntosHistorial = [];
+
+        // ── MODO (auto / manual) ──
+        function setModo(nuevoModo) {
+            modo = nuevoModo;
+            if (modo === 'auto') {
+                document.getElementById('btnAuto').className = 'toggle-btn activo';
+                document.getElementById('btnManual').className = 'toggle-btn inactivo';
+                document.getElementById('btnCentrar').style.display = 'none';
+                if (ultimaPos) map.setView(ultimaPos, map.getZoom());
+            } else {
+                document.getElementById('btnAuto').className = 'toggle-btn inactivo';
+                document.getElementById('btnManual').className = 'toggle-btn activo';
+                document.getElementById('btnCentrar').style.display = 'block';
+            }
+        }
+
+        // ── VISTA (realtime / historial) ──
+        function setVista(nuevaVista) {
+            vista = nuevaVista;
+            if (vista === 'realtime') {
+                document.getElementById('btnTiempoReal').className = 'toggle-btn activo';
+                document.getElementById('btnHistorial').className = 'toggle-btn inactivo';
+                document.getElementById('panel-historial').classList.remove('visible');
+                document.getElementById('modo-container').style.display = 'flex';
+                limpiarHistorial();
+                iniciarTiempoReal();
+            } else {
+                document.getElementById('btnTiempoReal').className = 'toggle-btn inactivo';
+                document.getElementById('btnHistorial').className = 'toggle-btn activo';
+                document.getElementById('panel-historial').classList.add('visible');
+                document.getElementById('modo-container').style.display = 'none';
+                document.getElementById('btnCentrar').style.display = 'none';
+                detenerTiempoReal();
+            }
+        }
+
+        // ── TIEMPO REAL ──
+        function iniciarTiempoReal() {
+            actualizar();
+            intervalo = setInterval(actualizar, 500);
+        }
+
+        function detenerTiempoReal() {
+            clearInterval(intervalo);
+            intervalo = null;
+        }
 
         function actualizar() {
             fetch('/api/ubicacion.php')
@@ -48,24 +155,19 @@
                         document.getElementById('status').textContent = '⚠️ ' + data.error;
                         return;
                     }
-
                     var lat = parseFloat(data.latitud);
                     var lon = parseFloat(data.longitud);
+                    ultimaPos = [lat, lon];
 
                     if (!marker) {
                         marker = L.marker([lat, lon]).addTo(map);
+                        map.setView(ultimaPos, 17);
                     } else {
                         marker.setLatLng([lat, lon]);
+                        if (modo === 'auto') map.setView(ultimaPos, map.getZoom());
                     }
 
-                    map.setView([lat, lon], 17);
-                    marker.bindPopup(
-                        '<b>GPS Tracker</b><br>' +
-                        'Lat: ' + lat + '<br>' +
-                        'Lon: ' + lon + '<br>' +
-                        'Recibido: ' + data.fecha_recepcion
-                    ).openPopup();
-
+                    marker.bindPopup('<b>GPS Tracker</b><br>Lat: ' + lat + '<br>Lon: ' + lon + '<br>Recibido: ' + data.fecha_recepcion);
                     document.getElementById('lat').textContent = lat;
                     document.getElementById('lon').textContent = lon;
                     document.getElementById('fecha').textContent = data.fecha_recepcion;
@@ -77,8 +179,126 @@
                 });
         }
 
-        actualizar();
-        setInterval(actualizar, 5000);
+        // ── HISTORIAL ──
+	function buscarRecorrido() {
+	    var inicioVal = document.getElementById('fechaInicio').value; // Formato del input HTML: YYYY-MM-DDTHH:MM
+	    var finVal = document.getElementById('fechaFin').value;
+
+	    if (!inicioVal || !finVal) {
+	        alert('Por favor selecciona las fechas de inicio y fin.');
+	        return;
+	    }
+
+	    // Convertir '2026-09-16T09:00' -> '2026-09-16 09:00:00'
+	    var inicio = inicioVal.replace('T', ' ');
+	    if (inicio.length === 16) inicio += ':00';
+
+	    var fin = finVal.replace('T', ' ');
+	    if (fin.length === 16) fin += ':00';
+
+	    console.log("Enviando a la API:", inicio, fin); // Verificación en F12
+
+	    document.getElementById('status').textContent = '⏳ Buscando puntos...';
+
+	    fetch('/api/recorrido.php?inicio=' + encodeURIComponent(inicio) + '&fin=' + encodeURIComponent(fin))
+	        .then(r => r.json())
+	        .then(data => {
+	            limpiarHistorial();
+
+	            if (!Array.isArray(data) || data.length === 0) {
+	                document.getElementById('status').textContent = '⚠️ Sin datos en ese intervalo';
+	                return;
+	            }
+
+	            var latLngs = [];
+	            data.forEach(p => {
+	                var lat = parseFloat(p.lat);
+	                var lng = parseFloat(p.lng);
+	                if (!isNaN(lat) && !isNaN(lng)) {
+	                    latLngs.push([lat, lng]);
+	                }
+	            });
+
+	            if (latLngs.length === 0) {
+	                document.getElementById('status').textContent = '⚠️ Puntos sin coordenadas válidas';
+	                return;
+	            }
+
+	            polylineHistorial = L.polyline(latLngs, { color: 'red', weight: 4 }).addTo(map);
+	            map.fitBounds(polylineHistorial.getBounds());
+	            document.getElementById('status').textContent = '✅ ' + latLngs.length + ' puntos dibujados';
+	        })
+	        .catch(err => {
+	            document.getElementById('status').textContent = '🔴 Error en la respuesta';
+	        });
+	}
+
+        function dibujarRecorrido() {
+            limpiarHistorial();
+
+            var coords = puntosHistorial.map(p => [parseFloat(p.latitud), parseFloat(p.longitud)]);
+
+            rutaLayer = L.polyline(coords, { color: '#00d4ff', weight: 3, opacity: 0.8 }).addTo(map);
+            map.fitBounds(rutaLayer.getBounds(), { padding: [30, 30] });
+
+            marcadorHistorial = L.marker(coords[0]).addTo(map);
+            actualizarSlider(0);
+
+            var slider = document.getElementById('slider');
+            slider.max = puntosHistorial.length - 1;
+            slider.value = 0;
+
+            document.getElementById('total-puntos').textContent = 'Total: ' + puntosHistorial.length + ' puntos';
+            document.getElementById('slider-container').classList.add('visible');
+
+            slider.oninput = function() {
+                actualizarSlider(parseInt(this.value));
+            };
+        }
+
+        function actualizarSlider(idx) {
+            var p = puntosHistorial[idx];
+            var lat = parseFloat(p.latitud);
+            var lon = parseFloat(p.longitud);
+
+            marcadorHistorial.setLatLng([lat, lon]);
+            marcadorHistorial.bindPopup('<b>Punto ' + (idx + 1) + '</b><br>Lat: ' + lat + '<br>Lon: ' + lon + '<br>' + p.fecha_recepcion).openPopup();
+
+            document.getElementById('lat').textContent = lat;
+            document.getElementById('lon').textContent = lon;
+            document.getElementById('fecha').textContent = p.fecha_recepcion;
+            document.getElementById('slider-info').textContent = 'Punto ' + (idx + 1) + ' de ' + puntosHistorial.length + ' — ' + p.fecha_recepcion;
+        }
+
+	function limpiarHistorial() {
+	    // 1. Quitar la línea del mapa si la variable guarda la referencia
+	    if (rutaLayer) { 
+	        map.removeLayer(rutaLayer); 
+	        rutaLayer = null; 
+	    }
+
+	    // 2. Quitar el marcador flotante del historial
+	    if (marcadorHistorial) { 
+	        map.removeLayer(marcadorHistorial); 
+	        marcadorHistorial = null; 
+	    }
+
+	    // 3. Forzar remoción de cualquier polilínea residual directamente desde Leaflet
+	    map.eachLayer(function (layer) {
+	        if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
+	            map.removeLayer(layer);
+	        }
+	    });
+
+	    // 4. Resetear los datos
+	    puntosHistorial = [];
+	    document.getElementById('slider-container').classList.remove('visible');
+	    document.getElementById('slider-info').textContent = '-';
+	    document.getElementById('total-puntos').textContent = '-';
+	}
+
+        // Arrancar en tiempo real
+        iniciarTiempoReal();
     </script>
 </body>
 </html>
