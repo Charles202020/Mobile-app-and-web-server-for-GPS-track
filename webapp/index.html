@@ -2,15 +2,15 @@
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <title>GPS Tracker</title>
+    <title>GPS Tracker 2.0</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; display: flex; flex-direction: column; height: 100vh; }
-        #header { padding: 10px 20px; background: #16213e; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #0f3460; flex-wrap: wrap; gap: 8px; }
-        #header h1 { font-size: 1rem; color: #00d4ff; }
+        #header { padding: 10px 20px; background: #3b1933; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #0f3460; flex-wrap: wrap; gap: 8px; }
+        #header h1 { font-size: 1rem; color: #00d4ff; }#ff69b4
         #header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         #status { font-size: 0.85rem; }
         .toggle-btn { padding: 5px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: all 0.2s; }
@@ -20,6 +20,7 @@
         #footer { padding: 8px 20px; background: #16213e; font-size: 0.82rem; display: flex; gap: 24px; border-top: 1px solid #0f3460; flex-wrap: wrap; }
         #footer span { color: #00d4ff; font-weight: bold; }
         #btnCentrar { position: fixed; bottom: 60px; right: 20px; z-index: 1000; background: #00d4ff; color: #1a1a2e; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.4); display: none; }
+
 
         /* Panel historial */
         #panel-historial { display: none; background: #16213e; border-bottom: 1px solid #0f3460; padding: 10px 20px; flex-direction: column; gap: 10px; }
@@ -37,7 +38,7 @@
 </head>
 <body>
     <div id="header">
-        <h1>📍 GPS Tracker</h1>
+        <h1>📍 GPS Tracker 2.0</h1>
         <div id="header-right">
             <button id="btnTiempoReal" class="toggle-btn activo" onclick="setVista('realtime')">📡 Tiempo Real</button>
             <button id="btnHistorial" class="toggle-btn inactivo" onclick="setVista('historial')">🕓 Historial</button>
@@ -224,7 +225,7 @@
 	                return;
 	            }
 
-	            polylineHistorial = L.polyline(latLngs, { color: 'red', weight: 4 }).addTo(map);
+	            polylineHistorial = L.polyline(latLngs, { color: '#FFC0CB', weight: 4 }).addTo(map);
 	            map.fitBounds(polylineHistorial.getBounds());
 	            document.getElementById('status').textContent = '✅ ' + latLngs.length + ' puntos dibujados';
 	        })
@@ -238,7 +239,7 @@
 
             var coords = puntosHistorial.map(p => [parseFloat(p.latitud), parseFloat(p.longitud)]);
 
-            rutaLayer = L.polyline(coords, { color: '#00d4ff', weight: 3, opacity: 0.8 }).addTo(map);
+            rutaLayer = L.polyline(coords, { color: '#FFC0CB', weight: 3, opacity: 0.8 }).addTo(map);
             map.fitBounds(rutaLayer.getBounds(), { padding: [30, 30] });
 
             marcadorHistorial = L.marker(coords[0]).addTo(map);
