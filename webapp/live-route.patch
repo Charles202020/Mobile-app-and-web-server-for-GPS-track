@@ -1,0 +1,64 @@
+diff --git a/webapp/index.html b/webapp/index.html
+index cf0eb37..156bf0a 100644
+--- a/webapp/index.html
++++ b/webapp/index.html
+@@ -101,6 +101,8 @@
+         var rutaLayer = null;
+         var marcadorHistorial = null;
+         var puntosHistorial = [];
++        var rutaTiempoReal = null;
++        var puntosTiempoReal = [];
+ 
+         // ── MODO (auto / manual) ──
+         function setModo(nuevoModo) {
+@@ -126,6 +128,7 @@
+                 document.getElementById('panel-historial').classList.remove('visible');
+                 document.getElementById('modo-container').style.display = 'flex';
+                 limpiarHistorial();
++                limpiarRutaTiempoReal();
+                 iniciarTiempoReal();
+             } else {
+                 document.getElementById('btnTiempoReal').className = 'toggle-btn inactivo';
+@@ -134,6 +137,7 @@
+                 document.getElementById('modo-container').style.display = 'none';
+                 document.getElementById('btnCentrar').style.display = 'none';
+                 detenerTiempoReal();
++                limpiarRutaTiempoReal();
+             }
+         }
+ 
+@@ -160,6 +164,19 @@
+                     var lon = parseFloat(data.longitud);
+                     ultimaPos = [lat, lon];
+ 
++                    // Trazar el recorrido en tiempo real: solo agregamos el punto
++                    // si es distinto al último para no acumular duplicados mientras
++                    // el vehículo está detenido.
++                    var ultimo = puntosTiempoReal[puntosTiempoReal.length - 1];
++                    if (!ultimo || ultimo[0] !== lat || ultimo[1] !== lon) {
++                        puntosTiempoReal.push(ultimaPos);
++                        if (!rutaTiempoReal) {
++                            rutaTiempoReal = L.polyline(puntosTiempoReal, { color: '#00d4ff', weight: 4, opacity: 0.85 }).addTo(map);
++                        } else {
++                            rutaTiempoReal.setLatLngs(puntosTiempoReal);
++                        }
++                    }
++
+                     if (!marker) {
+                         marker = L.marker([lat, lon]).addTo(map);
+                         map.setView(ultimaPos, 17);
+@@ -271,6 +288,14 @@
+             document.getElementById('slider-info').textContent = 'Punto ' + (idx + 1) + ' de ' + puntosHistorial.length + ' — ' + p.fecha_recepcion;
+         }
+ 
++        function limpiarRutaTiempoReal() {
++            if (rutaTiempoReal) {
++                map.removeLayer(rutaTiempoReal);
++                rutaTiempoReal = null;
++            }
++            puntosTiempoReal = [];
++        }
++
+ 	function limpiarHistorial() {
+ 	    // 1. Quitar la línea del mapa si la variable guarda la referencia
+ 	    if (rutaLayer) { 
