@@ -25,21 +25,23 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // Consulta directa usando la fecha almacenada en la base de datos
-    $stmt = $pdo->prepare("
-        SELECT 
-            CAST(latitud AS DOUBLE PRECISION) AS lat, 
-            CAST(longitud AS DOUBLE PRECISION) AS lng,
-            to_char(fecha_recepcion, 'YYYY-MM-DD HH24:MI:SS') AS fecha
-        FROM ubicaciones
-        WHERE fecha_recepcion BETWEEN TO_TIMESTAMP(:inicio, 'YYYY-MM-DD HH24:MI:SS') 
-                                  AND TO_TIMESTAMP(:fin, 'YYYY-MM-DD HH24:MI:SS')
-        ORDER BY id ASC
-    ");
+	$stmt = $pdo->prepare("
+	    SELECT
+	        CAST(latitud AS DOUBLE PRECISION) AS lat,
+	        CAST(longitud AS DOUBLE PRECISION) AS lng,
+	        to_char(fecha_recepcion - INTERVAL '5 hours', 'YYYY-MM-DD HH24:MI:SS') AS fecha
+	    FROM ubicaciones
+	    WHERE (fecha_recepcion - INTERVAL '5 hours') BETWEEN 
+	        TO_TIMESTAMP(:inicio, 'YYYY-MM-DD HH24:MI:SS')
+	        AND
+	        TO_TIMESTAMP(:fin, 'YYYY-MM-DD HH24:MI:SS')
+	    ORDER BY id ASC
+	");
 
-    $stmt->execute([
-        ':inicio' => $inicio,
-        ':fin' => $fin
-    ]);
+	    $stmt->execute([
+	        ':inicio' => $inicio,
+	        ':fin' => $fin
+	    ]);
 
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
