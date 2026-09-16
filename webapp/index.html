@@ -225,7 +225,7 @@
 	                return;
 	            }
 
-	            polylineHistorial = L.polyline(latLngs, { color: '#FFC0CB', weight: 4 }).addTo(map);
+	            polylineHistorial = L.polyline(latLngs, { color: ' #FF0000', weight: 4 }).addTo(map);
 	            map.fitBounds(polylineHistorial.getBounds());
 	            document.getElementById('status').textContent = '✅ ' + latLngs.length + ' puntos dibujados';
 	        })
@@ -239,7 +239,7 @@
 
             var coords = puntosHistorial.map(p => [parseFloat(p.latitud), parseFloat(p.longitud)]);
 
-            rutaLayer = L.polyline(coords, { color: '#FFC0CB', weight: 3, opacity: 0.8 }).addTo(map);
+            rutaLayer = L.polyline(coords, { color: ' #FF0000', weight: 6, opacity: 0.8 }).addTo(map);
             map.fitBounds(rutaLayer.getBounds(), { padding: [30, 30] });
 
             marcadorHistorial = L.marker(coords[0]).addTo(map);
