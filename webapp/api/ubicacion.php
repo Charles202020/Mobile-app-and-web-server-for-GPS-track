@@ -2,11 +2,12 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-$host = "TU_ENDPOINT_AQUI";
-$port = "5432";
-$dbname = "gpsdb";
-$user = "gpstracker";
-$password = "TU_CONTRASEÑA_AQUI";
+$env = parse_ini_file('/home/ubuntu/.env');
+$host = $env['DB_HOST'];
+$port = $env['DB_PORT'];
+$dbname = $env['DB_NAME'];
+$user = $env['DB_USER'];
+$password = $env['DB_PASS'];
 
 try {
     $pdo = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $user, $password);

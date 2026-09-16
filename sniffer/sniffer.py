@@ -2,12 +2,16 @@ import socket
 import psycopg2
 from datetime import datetime
 
-# Configuración de la base de datos
-DB_HOST = "TU_ENDPOINT_AQUI"
-DB_PORT = 5432
-DB_NAME = "gpsdb"
-DB_USER = "gpstracker"
-DB_PASS = "TU_CONTRASEÑA_AQUI"
+import os
+from dotenv import load_dotenv
+
+load_dotenv('/home/ubuntu/.env')
+
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = int(os.getenv('DB_PORT', 5432))
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
 
 # Configuración del socket UDP
 UDP_IP = "0.0.0.0"
