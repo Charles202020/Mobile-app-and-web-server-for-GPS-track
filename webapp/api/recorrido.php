@@ -15,7 +15,7 @@ $inicio = isset($_GET['inicio']) ? trim($_GET['inicio']) : null;
 $fin = isset($_GET['fin']) ? trim($_GET['fin']) : null;
 
 if (!$inicio || !$fin) {
-    echo json_encode(["error" => "Faltan parámetros inicio y fin"]);
+    echo json_encode(["errror" => "Faltan parámetros inicio y fin"]);
     exit;
 }
 
